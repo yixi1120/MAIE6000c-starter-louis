@@ -37,3 +37,42 @@ def test_create_and_read_case_and_job(client):
     job_response = client.get(f"/jobs/{job_id}")
     assert job_response.status_code == 200
     assert job_response.json()["case_id"] == case_id
+
+
+def test_create_case_rejects_blank_title(client):
+    response = client.post(
+        "/cases",
+        json={
+            "title": "   ",
+            "description": "A valid case description.",
+        },
+    )
+
+    assert response.status_code == 422
+
+
+def test_create_case_rejects_blank_description(client):
+    response = client.post(
+        "/cases",
+        json={
+            "title": "Valid title",
+            "description": "     ",
+        },
+    )
+
+    assert response.status_code == 422
+
+
+def test_create_case_trims_surrounding_whitespace(client):
+    response = client.post(
+        "/cases",
+        json={
+            "title": "  Cannot login  ",
+            "description": "  User cannot access the dashboard.  ",
+        },
+    )
+
+    assert response.status_code == 201
+    case = response.json()["case"]
+    assert case["title"] == "Cannot login"
+    assert case["description"] == "User cannot access the dashboard."
